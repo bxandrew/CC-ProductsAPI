@@ -2,4 +2,4 @@ const express = require('express');
 productsRoute = express.Router();
 
 
-export default productsRoute;
+// export default productsRoute;

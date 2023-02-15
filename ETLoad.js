@@ -15,61 +15,53 @@ const currentCS = new pgp.helpers.ColumnSet([
   'name', 'slogan', 'description', 'category', 'default_price'
 ], {table: 'test'});
 
-// const client = new Client({
-//   host: 'localhost',
-//   user: 'andrew',
-//   port: 5432,
-//   password: 'andrew',
-//   database: 'testproducts'
-// })
-
-// const text = 'INSERT INTO test(name, slogan, description, category, default_price) VALUES ($1, $2, $3, $4, $5) RETURNING *'
-// client.query(text, formattedData).then((res) => {
-//   console.log(res.rows[0]);
-// })
-
-// const connectDb = async () => {
-//   try {
-//     await client.connect();
-//     await dropTable();
-//     await createTable();
-
-//     console.log('Client connected');
-//   } catch (err) {
-//     console.log(err);
-//   }
-// }
-
 let stream = fs.createReadStream('../SDC-Data/product.csv') //Papa can leverage the stream
 
 const loadData = () => {
   Papa.parse(stream, {
     header: true,
-    // dynamicTyping: true,
     chunk: (results, parser) => {
-      console.log(results.data);
       const data = results.data;
-      // const text = ('INSERT INTO test(name, slogan, description, category, default_price) VALUES ()');
-      // client.query(text, data)
+      const insert = pgp.helpers.insert(data, currentCS);
+      db.none(insert)
+        .then((data) => {
+          console.log('Success, current batch inserted');
+          console.timeLog();
+        })
+        .catch((err) => {
+          throw Error(err);
+        });
     },
+    complete: () => {
+      console.log('Finished reading all CSV data');
+    }
   })
 }
 
-const dropTable = async () => {
-  await client.query('DROP TABLE IF EXISTS test;')
-}
-
-const createTable = async () => {
-  await client.query('CREATE TABLE IF NOT EXISTS test (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);');
-}
-
-// const loadTable = async () => {
-//   await client.query('')
-// }
+let sco; // Shared connection object;
+const dropTable = 'DROP TABLE IF EXISTS test;'
+const createTable = 'CREATE TABLE IF NOT EXISTS test (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);'
 
 
-// connectDb();
-loadData();
+console.time(); // Start timer
+db.connect()
+  .then((client) => {
+    sco = client; // Sco is our client object
+    return sco.any(dropTable); // Drop table
+  }).then(() => {
+    return sco.any(createTable); // Create table
+  }).then(() => {
+    return loadData(); // Load data into table
+  }).catch(err => console.log(err))
+  .finally(() => {
+    sco.done(); // Closes connection
+    console.log('Connection end--------------');
+  });
+
+
+// Promise.all(allPromises).then(() => console.log(allPromises));
+
+// loadData();
 
 // CREATE TABLE IF NOT EXISTS test (
 //   id SERIAL PRIMARY KEY,
@@ -86,3 +78,5 @@ loadData();
 // COPY test FROM '/Users/andrew/Desktop/Hack Reactor/SDC-Data/products.csv' csv header;
 
 //COPY test FROM '/Users/andrew/Desktop/Hack Reactor/SDC-Data/product.csv' csv header;
+
+//SELECT * FROM test WHERE name = 'Aron Sweatpants';
