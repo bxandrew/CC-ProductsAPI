@@ -13,10 +13,18 @@ const db = pgp({
 
 let sco; // Shared connection object;
 
+// All CSV streams
+const photosStream = fs.createReadStream('../SDC-Data/photos.csv')
+const featuresStream = fs.createReadStream('../SDC-Data/features.csv')
+const skusStream = fs.createReadStream('../SDC-Data/skus.csv')
+const productsStream = fs.createReadStream('../SDC-Data/product.csv')
+const relatedStream = fs.createReadStream('../SDC-Data/related.csv')
+const stylesStream = fs.createReadStream('../SDC-Data/styles.csv')
+
+// Photos Table
 const photosCS = new pgp.helpers.ColumnSet([
   'id', 'style_id', 'url', 'thumbnail_url'
 ], {table: 'photos'});
-const photosStream = fs.createReadStream('../SDC-Data/photos.csv') //Papa can leverage the stream
 const dropPhotos = 'DROP TABLE IF EXISTS photos;'
 const createPhotos = 'CREATE TABLE IF NOT EXISTS photos (id SERIAL PRIMARY KEY, style_id INT, url TEXT, thumbnail_url TEXT);'
 const photosParse = (data) => {
@@ -26,10 +34,10 @@ const photosParse = (data) => {
   });
 }
 
+// Features Table
 const featuresCS = new pgp.helpers.ColumnSet([
   'id', 'product_id', 'feature', 'value'
 ], {table: 'features'});
-const featuresStream = fs.createReadStream('../SDC-Data/features.csv') //Papa can leverage the stream
 const dropFeatures = 'DROP TABLE IF EXISTS features;'
 const createFeatures = 'CREATE TABLE IF NOT EXISTS features (id SERIAL PRIMARY KEY, product_id INT, feature TEXT, value TEXT);'
 const featuresParse = (data) => {
@@ -39,11 +47,10 @@ const featuresParse = (data) => {
   });
 }
 
-
+// Skus Table
 const skusCS = new pgp.helpers.ColumnSet([
   'id', 'style_id', 'size', 'quantity'
 ], {table: 'skus'});
-const skusStream = fs.createReadStream('../SDC-Data/skus.csv') //Papa can leverage the stream
 const dropSkus = 'DROP TABLE IF EXISTS skus;'
 const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);'
 const skusParse = (data) => {
@@ -54,10 +61,10 @@ const skusParse = (data) => {
   });
 }
 
+// Products Table
 const productsCS = new pgp.helpers.ColumnSet([
   'id', 'name', 'slogan', 'description', 'category', 'default_price'
 ], {table: 'products'});
-const productsStream = fs.createReadStream('../SDC-Data/product.csv') //Papa can leverage the stream
 const dropProducts = 'DROP TABLE IF EXISTS products;'
 const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);'
 const productsParse = (data) => {
@@ -66,10 +73,10 @@ const productsParse = (data) => {
   });
 }
 
+// Related Table
 const relatedCS = new pgp.helpers.ColumnSet([
   'id', 'current_product_id', 'related_product_id'
 ], {table: 'related'});
-const relatedStream = fs.createReadStream('../SDC-Data/related.csv') //Papa can leverage the stream
 const dropRelated = 'DROP TABLE IF EXISTS related;'
 const createRelated = 'CREATE TABLE IF NOT EXISTS related (id SERIAL PRIMARY KEY, current_product_id INT, related_product_id INT);'
 const relatedParse = (data) => {
@@ -80,10 +87,10 @@ const relatedParse = (data) => {
   });
 }
 
+// Styles table
 const stylesCS = new pgp.helpers.ColumnSet([
   'id', 'product_id', 'name', 'original_price', 'sale_price', 'default_style'
 ], {table: 'styles'});
-const stylesStream = fs.createReadStream('../SDC-Data/styles.csv') //Papa can leverage the stream
 const dropStyles = 'DROP TABLE IF EXISTS styles;'
 const createStyles = 'CREATE TABLE IF NOT EXISTS styles (id SERIAL PRIMARY KEY, product_id INT, name TEXT, original_price TEXT, sale_price TEXT, default_style BOOL);'
 const stylesParse = (data) => {
@@ -121,6 +128,7 @@ console.time(); // Start timer
 db.connect()
   .then(async (client) => {
     sco = client; // Sco is our client object
+    // Drop all tables first
     await sco.any(dropPhotos);
     await sco.any(dropFeatures);
     await sco.any(dropSkus);
@@ -129,6 +137,7 @@ db.connect()
     await sco.any(dropStyles);
     return;
   }).then(async () => {
+    // Create all tables
     await sco.any(createPhotos);
     await sco.any(createFeatures);
     await sco.any(createSkus);
@@ -137,6 +146,7 @@ db.connect()
     await sco.any(createStyles);
     return;
   }).then(async () => {
+    // Load all tables
     loadData(photosCS, photosStream, photosParse, 'photos'); // Load data into table
     loadData(featuresCS, featuresStream, featuresParse, 'features'); // Load data into table
     loadData(skusCS, skusStream, skusParse, 'skus'); // Load data into table
