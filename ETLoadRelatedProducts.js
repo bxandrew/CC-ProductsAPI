@@ -11,11 +11,11 @@ const db = pgp({
   database: 'testproducts'
 })
 
-const skusCS = new pgp.helpers.ColumnSet([
-  'id', 'style_id', 'size', 'quantity'
-], {table: 'skus'});
+const relatedCS = new pgp.helpers.ColumnSet([
+  'id', 'current_product_id', 'related_product_id'
+], {table: 'related'});
 
-let skusStream = fs.createReadStream('../SDC-Data/skus.csv') //Papa can leverage the stream
+let relatedStream = fs.createReadStream('../SDC-Data/related.csv') //Papa can leverage the stream
 
 const loadData = (currCS, stream) => {
   Papa.parse(stream, {
@@ -25,9 +25,10 @@ const loadData = (currCS, stream) => {
 
       data.forEach((obj) => {
         obj.id = Number(obj.id);
-        obj.style_id = Number(obj.styleId);
-        obj.quantity = Number(obj.quantity);
-      })
+        obj.current_product_id = Number(obj.current_product_id);
+        obj.related_product_id = Number(obj.related_product_id);
+      });
+      // console.log(data);
 
       const insert = pgp.helpers.insert(data, currCS);
       db.none(insert)
@@ -46,19 +47,19 @@ const loadData = (currCS, stream) => {
 }
 
 let sco; // Shared connection object;
-const dropSkus = 'DROP TABLE IF EXISTS skus;'
-const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);'
+const dropRelated = 'DROP TABLE IF EXISTS related;'
+const createRelated = 'CREATE TABLE IF NOT EXISTS related (id SERIAL PRIMARY KEY, current_product_id INT, related_product_id INT);'
 
 
 console.time(); // Start timer
 db.connect()
   .then((client) => {
     sco = client; // Sco is our client object
-    return sco.any(dropSkus); // Drop table
+    return sco.any(dropRelated); // Drop table
   }).then(() => {
-    return sco.any(createSkus); // Create table
+    return sco.any(createRelated); // Create table
   }).then(() => {
-    return loadData(skusCS, skusStream); // Load data into table
+    return loadData(relatedCS, relatedStream); // Load data into table
   }).catch(err => console.log(err))
   .finally(() => {
     sco.done(); // Closes connection
