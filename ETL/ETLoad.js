@@ -66,10 +66,12 @@ const productsCS = new pgp.helpers.ColumnSet([
   'id', 'name', 'slogan', 'description', 'category', 'default_price'
 ], {table: 'products'});
 const dropProducts = 'DROP TABLE IF EXISTS products;';
-const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);';
+// const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);';
+const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price NUMERIC(16, 2));';
 const productsParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
+    obj.default_price = Number(obj.default_price);
   });
 }
 
@@ -111,7 +113,7 @@ const loadData = (currCS, stream, parseCB, name) => {
       const insert = pgp.helpers.insert(data, currCS);
       db.none(insert)
         .then((data) => {
-          // console.log(`Success, current batch inserted from ${name}`);
+          console.log(`Success, current batch inserted from ${name}`);
         })
         .catch((err) => {
           throw Error(err);
