@@ -30,6 +30,8 @@ const loadData = (currCS, stream) => {
         obj.default_style = obj.default_style === 1 ? true : false;
       })
 
+      // console.log(data);
+
       const insert = pgp.helpers.insert(data, currCS);
       db.none(insert)
         .then((data) => {
