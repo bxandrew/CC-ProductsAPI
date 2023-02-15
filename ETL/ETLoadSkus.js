@@ -11,11 +11,11 @@ const db = pgp({
   database: 'testproducts'
 })
 
-const photosCS = new pgp.helpers.ColumnSet([
-  'id', 'style_id', 'url', 'thumbnail_url'
-], {table: 'photos'});
+const skusCS = new pgp.helpers.ColumnSet([
+  'id', 'style_id', 'size', 'quantity'
+], {table: 'skus'});
 
-let photosStream = fs.createReadStream('../SDC-Data/photos.csv') //Papa can leverage the stream
+let skusStream = fs.createReadStream('../../SDC-Data/skus.csv') //Papa can leverage the stream
 
 const loadData = (currCS, stream) => {
   Papa.parse(stream, {
@@ -26,6 +26,7 @@ const loadData = (currCS, stream) => {
       data.forEach((obj) => {
         obj.id = Number(obj.id);
         obj.style_id = Number(obj.styleId);
+        obj.quantity = Number(obj.quantity);
       })
 
       const insert = pgp.helpers.insert(data, currCS);
@@ -45,19 +46,19 @@ const loadData = (currCS, stream) => {
 }
 
 let sco; // Shared connection object;
-const dropPhotos = 'DROP TABLE IF EXISTS photos;'
-const createPhotos = 'CREATE TABLE IF NOT EXISTS photos (id SERIAL PRIMARY KEY, style_id INT, url TEXT, thumbnail_url TEXT);'
+const dropSkus = 'DROP TABLE IF EXISTS skus;'
+const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);'
 
 
 console.time(); // Start timer
 db.connect()
   .then((client) => {
     sco = client; // Sco is our client object
-    return sco.any(dropPhotos); // Drop table
+    return sco.any(dropSkus); // Drop table
   }).then(() => {
-    return sco.any(createPhotos); // Create table
+    return sco.any(createSkus); // Create table
   }).then(() => {
-    return loadData(photosCS, photosStream); // Load data into table
+    return loadData(skusCS, skusStream); // Load data into table
   }).catch(err => console.log(err))
   .finally(() => {
     sco.done(); // Closes connection

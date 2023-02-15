@@ -11,11 +11,11 @@ const db = pgp({
   database: 'testproducts'
 })
 
-const skusCS = new pgp.helpers.ColumnSet([
-  'id', 'style_id', 'size', 'quantity'
-], {table: 'skus'});
+const stylesCS = new pgp.helpers.ColumnSet([
+  'id', 'product_id', 'name', 'original_price', 'sale_price', 'default_style'
+], {table: 'styles'});
 
-let skusStream = fs.createReadStream('../SDC-Data/skus.csv') //Papa can leverage the stream
+let stylesStream = fs.createReadStream('../../SDC-Data/styles.csv') //Papa can leverage the stream
 
 const loadData = (currCS, stream) => {
   Papa.parse(stream, {
@@ -25,9 +25,12 @@ const loadData = (currCS, stream) => {
 
       data.forEach((obj) => {
         obj.id = Number(obj.id);
-        obj.style_id = Number(obj.styleId);
-        obj.quantity = Number(obj.quantity);
+        obj.product_id = Number(obj.productId);
+        obj.default_style = Number(obj.default_style);
+        obj.default_style = obj.default_style === 1 ? true : false;
       })
+
+      // console.log(data);
 
       const insert = pgp.helpers.insert(data, currCS);
       db.none(insert)
@@ -46,19 +49,19 @@ const loadData = (currCS, stream) => {
 }
 
 let sco; // Shared connection object;
-const dropSkus = 'DROP TABLE IF EXISTS skus;'
-const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);'
+const dropStyles = 'DROP TABLE IF EXISTS styles;'
+const createStyles = 'CREATE TABLE IF NOT EXISTS styles (id SERIAL PRIMARY KEY, product_id INT, name TEXT, original_price TEXT, sale_price TEXT, default_style BOOL);'
 
 
 console.time(); // Start timer
 db.connect()
   .then((client) => {
     sco = client; // Sco is our client object
-    return sco.any(dropSkus); // Drop table
+    return sco.any(dropStyles); // Drop table
   }).then(() => {
-    return sco.any(createSkus); // Create table
+    return sco.any(createStyles); // Create table
   }).then(() => {
-    return loadData(skusCS, skusStream); // Load data into table
+    return loadData(stylesCS, stylesStream); // Load data into table
   }).catch(err => console.log(err))
   .finally(() => {
     sco.done(); // Closes connection

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { Client } = require('pg')
+const { Client } = require('pg');
 const Papa = require('papaparse');
 const pgp = require('pg-promise')({ capSQL: true});
 
@@ -8,25 +8,25 @@ const db = pgp({
   user: 'andrew',
   port: 5432,
   password: 'andrew',
-  database: 'testproducts'
-})
+  database: 'productsdb'
+});
 
 let sco; // Shared connection object;
 
 // All CSV streams
-const photosStream = fs.createReadStream('../SDC-Data/photos.csv')
-const featuresStream = fs.createReadStream('../SDC-Data/features.csv')
-const skusStream = fs.createReadStream('../SDC-Data/skus.csv')
-const productsStream = fs.createReadStream('../SDC-Data/product.csv')
-const relatedStream = fs.createReadStream('../SDC-Data/related.csv')
-const stylesStream = fs.createReadStream('../SDC-Data/styles.csv')
+const photosStream = fs.createReadStream('../../SDC-Data/photos.csv');
+const featuresStream = fs.createReadStream('../../SDC-Data/features.csv');
+const skusStream = fs.createReadStream('../../SDC-Data/skus.csv');
+const productsStream = fs.createReadStream('../../SDC-Data/product.csv');
+const relatedStream = fs.createReadStream('../../SDC-Data/related.csv');
+const stylesStream = fs.createReadStream('../../SDC-Data/styles.csv');
 
 // Photos Table
 const photosCS = new pgp.helpers.ColumnSet([
   'id', 'style_id', 'url', 'thumbnail_url'
 ], {table: 'photos'});
-const dropPhotos = 'DROP TABLE IF EXISTS photos;'
-const createPhotos = 'CREATE TABLE IF NOT EXISTS photos (id SERIAL PRIMARY KEY, style_id INT, url TEXT, thumbnail_url TEXT);'
+const dropPhotos = 'DROP TABLE IF EXISTS photos;';
+const createPhotos = 'CREATE TABLE IF NOT EXISTS photos (id SERIAL PRIMARY KEY, style_id INT, url TEXT, thumbnail_url TEXT);';
 const photosParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
@@ -51,8 +51,8 @@ const featuresParse = (data) => {
 const skusCS = new pgp.helpers.ColumnSet([
   'id', 'style_id', 'size', 'quantity'
 ], {table: 'skus'});
-const dropSkus = 'DROP TABLE IF EXISTS skus;'
-const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);'
+const dropSkus = 'DROP TABLE IF EXISTS skus;';
+const createSkus = 'CREATE TABLE IF NOT EXISTS skus (id SERIAL PRIMARY KEY, style_id INT, size TEXT, quantity INT);';
 const skusParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
@@ -65,8 +65,8 @@ const skusParse = (data) => {
 const productsCS = new pgp.helpers.ColumnSet([
   'id', 'name', 'slogan', 'description', 'category', 'default_price'
 ], {table: 'products'});
-const dropProducts = 'DROP TABLE IF EXISTS products;'
-const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);'
+const dropProducts = 'DROP TABLE IF EXISTS products;';
+const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);';
 const productsParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
@@ -77,8 +77,8 @@ const productsParse = (data) => {
 const relatedCS = new pgp.helpers.ColumnSet([
   'id', 'current_product_id', 'related_product_id'
 ], {table: 'related'});
-const dropRelated = 'DROP TABLE IF EXISTS related;'
-const createRelated = 'CREATE TABLE IF NOT EXISTS related (id SERIAL PRIMARY KEY, current_product_id INT, related_product_id INT);'
+const dropRelated = 'DROP TABLE IF EXISTS related;';
+const createRelated = 'CREATE TABLE IF NOT EXISTS related (id SERIAL PRIMARY KEY, current_product_id INT, related_product_id INT);';
 const relatedParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
@@ -91,8 +91,8 @@ const relatedParse = (data) => {
 const stylesCS = new pgp.helpers.ColumnSet([
   'id', 'product_id', 'name', 'original_price', 'sale_price', 'default_style'
 ], {table: 'styles'});
-const dropStyles = 'DROP TABLE IF EXISTS styles;'
-const createStyles = 'CREATE TABLE IF NOT EXISTS styles (id SERIAL PRIMARY KEY, product_id INT, name TEXT, original_price TEXT, sale_price TEXT, default_style BOOL);'
+const dropStyles = 'DROP TABLE IF EXISTS styles;';
+const createStyles = 'CREATE TABLE IF NOT EXISTS styles (id SERIAL PRIMARY KEY, product_id INT, name TEXT, original_price TEXT, sale_price TEXT, default_style BOOL);';
 const stylesParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);

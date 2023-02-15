@@ -11,25 +11,23 @@ const db = pgp({
   database: 'testproducts'
 })
 
-const productsCS = new pgp.helpers.ColumnSet([
-'id', 'name', 'slogan', 'description', 'category', 'default_price'
-], {table: 'products'});
+const featuresCS = new pgp.helpers.ColumnSet([
+  'id', 'product_id', 'feature', 'value'
+], {table: 'features'});
 
-let productsStream = fs.createReadStream('../SDC-Data/product.csv') //Papa can leverage the stream
+let featuresStream = fs.createReadStream('../../SDC-Data/features.csv') //Papa can leverage the stream
 
 const loadData = (currCS, stream) => {
   Papa.parse(stream, {
     header: true,
-    // dynamicTyping: true,
     chunk: (results, parser) => {
       const data = results.data;
 
-      // Parse id to int
       data.forEach((obj) => {
         obj.id = Number(obj.id);
-      });
+        obj.product_id = Number(obj.id);
+      })
 
-      // console.log(data);
       const insert = pgp.helpers.insert(data, currCS);
       db.none(insert)
         .then((data) => {
@@ -47,19 +45,19 @@ const loadData = (currCS, stream) => {
 }
 
 let sco; // Shared connection object;
-const dropProducts = 'DROP TABLE IF EXISTS products;'
-const createProducts = 'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT, slogan TEXT, description TEXT, category TEXT, default_price TEXT);'
+const dropFeatures = 'DROP TABLE IF EXISTS features;'
+const createFeatures = 'CREATE TABLE IF NOT EXISTS features (id SERIAL PRIMARY KEY, product_id INT, feature TEXT, value TEXT);'
 
 
 console.time(); // Start timer
 db.connect()
   .then((client) => {
     sco = client; // Sco is our client object
-    return sco.any(dropProducts); // Drop table
+    return sco.any(dropFeatures); // Drop table
   }).then(() => {
-    return sco.any(createProducts); // Create table
+    return sco.any(createFeatures); // Create table
   }).then(() => {
-    return loadData(productsCS, productsStream); // Load data into table
+    return loadData(featuresCS, featuresStream); // Load data into table
   }).catch(err => console.log(err))
   .finally(() => {
     sco.done(); // Closes connection

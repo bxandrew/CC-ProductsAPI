@@ -15,7 +15,7 @@ const relatedCS = new pgp.helpers.ColumnSet([
   'id', 'current_product_id', 'related_product_id'
 ], {table: 'related'});
 
-let relatedStream = fs.createReadStream('../SDC-Data/related.csv') //Papa can leverage the stream
+let relatedStream = fs.createReadStream('../../SDC-Data/related.csv') //Papa can leverage the stream
 
 const loadData = (currCS, stream) => {
   Papa.parse(stream, {
