@@ -22,7 +22,7 @@ products.get('/', async (req, res) => {
 
   // const startingId = (page * count) - count + 1;
   // const endingId = startingId + count;
-  const offset = (page*count) - count;
+  const offset = (page * count) - count;
 
   // let results = await client.query(`SELECT * FROM products WHERE id >= ${startingId} AND id < ${endingId}`)
   let results = await client.query(`SELECT * FROM products LIMIT ${count} OFFSET ${offset}`)
@@ -99,42 +99,40 @@ products.get('/:id/styles', async (req, res) => {
   })
 
   const skus = styleIds.map((styleId, index) => {
-    return client.query()
+    return client.query(`SELECT id, size, quantity FROM skus WHERE style_id = ${styleId}`)
+      .then((res) => {
+        // res.rows is an array of objects
+        let skusObj = {};
+        res.rows.forEach((sku) => {
+          skusObj[sku.id] = { quantity: sku.quantity, size: sku.size };
+        })
+        styles[index].skus = skusObj;
+        return;
+      })
   })
 
+
   console.time();
-  Promise.all(photos).then(() => {
+  Promise.all([skus, photos].map((arr, index) => {
+    return Promise.all(arr).then(() => {
+      console.log(`${index === 0 ? 'skus' : 'photos'} done`)
+    });
+  })).then(() => {
     console.timeEnd();
-  });
+    console.log(styles);
+    let stylesJson = {
+      product_id: req.params.id,
+      results: styles,
+    }
+    res.status(200);
+    res.send(stylesJson);
+    res.end()
+  }).catch(() => {
+    console.log('Error occured getting styles');
+    res.end();
+  })
 
-  // console.log('https://images.unsplash.com/photo-1549831243-a69a0b3d39e0?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2775&q=80'.length);
-
-  // Takes product_id as param
-  // console.timeEnd();
-  res.end();
 })
-
-
-
-
-// {
-//   product_id: 'string', // grab from params
-//   results: [ //an array of style objects
-//     {
-//       style_id, name, original_price, sale_price, 'default?',
-//       photos: [
-//         {thumbnail_url, url}, ...{ }
-//       ],
-//       skus: [
-//         123123: {quantity, size},
-//         123124: {},
-//       ]
-//     },
-//     {
-//       //another style object
-//     }
-//   ]
-// }
 
 products.get('/:id/related', (req, res) => {
   console.log('GET request to /products/:id/related');
