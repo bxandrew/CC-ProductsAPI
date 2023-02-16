@@ -43,7 +43,7 @@ const createFeatures = 'CREATE TABLE IF NOT EXISTS features (id SERIAL PRIMARY K
 const featuresParse = (data) => {
   data.forEach((obj) => {
     obj.id = Number(obj.id);
-    obj.product_id = Number(obj.id);
+    obj.product_id = Number(obj.product_id);
   });
 }
 
