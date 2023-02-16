@@ -12,7 +12,6 @@ const client = new Client({
 client.connect().then(() => console.log('Successfully connected to PostgreSQL!'));
 
 products = express.Router();
-//already going to /products
 
 products.get('/', async (req, res) => {
   console.log('GET request to /products');
@@ -39,35 +38,37 @@ products.get('/:id', async (req, res) => {
 
   const id = Number(req.params.id);
 
-  let allPromises = [];
   let productResult;
   let featureResult;
-  console.time();
 
-  // Promisify both queries to execute at the same time. (Looks like it saves 5ms);
-  allPromises.push(client.query(`SELECT * FROM products WHERE id = ${id}`)
+  console.time();
+  const products = await client.query(`SELECT * FROM products WHERE id = ${id}`)
     .then((res) => {
       productResult = res.rows[0];
+      console.log('Time to getting products')
       console.timeLog();
+    }).catch(() => {
+      console.log('Error retrieving from products');
+      res.status(404);
+      res.end();
     })
-  );
 
-  allPromises.push(client.query(`SELECT feature, value FROM features WHERE product_id = ${id}`)
+  const features = await client.query(`SELECT feature, value FROM features WHERE product_id = ${id}`)
     .then((res) => {
+      console.log('Time to getting features')
       console.timeLog();
       featureResult = res.rows
-    }))
+    }).catch(() => {
+      console.log('Error retrieving from features');
+      res.status(404);
+      res.end();
+    })
 
-  Promise.all(allPromises).then(() => {
-    let finalResult = {...productResult, features: featureResult};
-    console.timeEnd();
-    res.status(200);
-    res.send(finalResult);
-    res.end();
-  }).catch(() => {
-    res.status(404);
-    res.end();
-  })
+  let finalResult = {...productResult, features: featureResult};
+  console.log('Time to sending JSON obj out');
+  console.timeEnd();
+  res.status(200);
+  res.send(finalResult);
 })
 
 products.get('/:id/styles', async (req, res) => {
@@ -75,72 +76,115 @@ products.get('/:id/styles', async (req, res) => {
 
   const id = Number(req.params.id);
 
-  let styleIds;
-
-  // console.time();
-  const styles = await client.query(`SELECT id, name, original_price, sale_price, default_style FROM styles WHERE product_id = ${id}`)
-    .then((res) => {
-      //iterate through each res.rows object
-      styleIds = res.rows.map((style) => style.id);
-      // console.timeLog();
-      return res.rows;
-    })
-
-  // Index of styleIds should directly match index of styles array
-  // Next up, grab all the photos from each style
-  // Photos should be an array of ordered photos for each style_id
-  // Photos is now an array of promises
-  const photos = styleIds.map((styleId, index) => {
-    return client.query(`SELECT thumbnail_url, url FROM photos WHERE style_id = ${styleId}`)
-      .then((res) => {
-        styles[index].photos = res.rows;
-        return;
-      });
-  })
-
-  const skus = styleIds.map((styleId, index) => {
-    return client.query(`SELECT id, size, quantity FROM skus WHERE style_id = ${styleId}`)
-      .then((res) => {
-        // res.rows is an array of objects
-        let skusObj = {};
-        res.rows.forEach((sku) => {
-          skusObj[sku.id] = { quantity: sku.quantity, size: sku.size };
-        })
-        styles[index].skus = skusObj;
-        return;
-      })
-  })
-
+  let styleIds = []; // an array of styleIds
 
   console.time();
-  Promise.all([skus, photos].map((arr, index) => {
-    return Promise.all(arr).then(() => {
-      console.log(`${index === 0 ? 'skus' : 'photos'} done`)
-    });
-  })).then(() => {
-    console.timeEnd();
-    console.log(styles);
-    let stylesJson = {
-      product_id: req.params.id,
-      results: styles,
-    }
+  const styles = await client.query(`SELECT id, name, original_price, sale_price, default_style FROM styles WHERE product_id = ${id}`)
+    .then((res) => {
+      return res.rows.map((style) => {
+        styleIds.push(style.id);
+
+        return {
+          style_id: style.id,
+          name: style.name,
+          original_price: style.original_price + '.00',
+          sale_price: style.sale_price === 'null' ? null : style.sale_price + '.00',
+          'default?': style.default_style,
+          photos: [],
+          skus: {},
+        }
+      });
+    }).catch(() => {
+      console.log('Error retrieving styles');
+      res.status(404);
+      res.end();
+    })
+
+  console.log('Time to getting all styles');
+  console.timeLog();
+  // If there are no styles associated with product id, simple send an empty array and end.
+  if (!styleIds.length) {
     res.status(200);
-    res.send(stylesJson);
-    res.end()
-  }).catch(() => {
-    console.log('Error occured getting styles');
+    res.send([]);
     res.end();
+    return;
+  }
+
+  const styleIdString = styleIds.join(', ');
+
+  const photosCache = {};
+  const photos = await client.query(`SELECT style_id, thumbnail_url, url FROM photos WHERE style_id IN (${styleIdString})`)
+    .then((res) => {
+      // Iterate through all the objects, res.rows is an array
+      res.rows.forEach((photoObj) => {
+        if (!photosCache[photoObj.style_id]) {
+          photosCache[photoObj.style_id] = [];
+        }
+        const { thumbnail_url, url } = photoObj;
+        let parsePhoto = { thumbnail_url, url };
+        photosCache[photoObj.style_id].push(parsePhoto);
+      })
+    }).catch(() => {
+      console.log('Error retrieving photos');
+      res.status(404);
+      res.end();
+    })
+
+  console.log('Time to getting all photos');
+  console.timeLog();
+
+  const skusCache = {};
+  const skus = await client.query(`SELECT style_id, id, size, quantity FROM skus WHERE style_id IN (${styleIdString})`)
+  .then((res) => {
+    res.rows.forEach((sku) => {
+      if (!skusCache[sku.style_id]) {
+        skusCache[sku.style_id] = {};
+      }
+      const { quantity, size } = sku;
+      skusCache[sku.style_id][sku.id] = { quantity, size };
+    })
+  }).catch(() => {
+    console.log('Error retrieving skus');
+    res.status(404);
+    res.end()
   })
 
-})
+  console.log('Time to getting all skus');
+  console.timeLog();
 
-products.get('/:id/related', (req, res) => {
-  console.log('GET request to /products/:id/related');
+  // Assign styles photos and skus here
+  for (let style of styles) {
+    style.photos = photosCache[style.style_id];
+    style.skus = skusCache[style.style_id];
+  }
 
-  // Takes product_id as params
-
+  console.log('Sending JSON object out from styles');
+  console.timeEnd();
+  res.status(200);
+  res.send(styles);
   res.end();
 })
 
+products.get('/:id/related', async (req, res) => {
+  console.log('GET request to /products/:id/related');
+
+  const id = req.params.id;
+  let relatedProducts;
+
+  console.time();
+  const relatedIds = await client.query(`SELECT related_product_id FROM related WHERE current_product_id = ${id}`)
+    .then((res) => {
+      relatedProducts = res.rows.map((obj) => obj.related_product_id);
+    }).catch(() => {
+      res.status(404);
+      res.end();
+    })
+
+  console.log('Time to getting all related products and sending JSON object out');
+  console.timeLog();
+  console.timeEnd();
+
+  res.send(relatedProducts);
+})
+
 module.exports = products;
-// console.log(products);

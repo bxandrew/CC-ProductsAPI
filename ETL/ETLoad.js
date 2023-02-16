@@ -21,6 +21,7 @@ const productsStream = fs.createReadStream('../../SDC-Data/product.csv');
 const relatedStream = fs.createReadStream('../../SDC-Data/related.csv');
 const stylesStream = fs.createReadStream('../../SDC-Data/styles.csv');
 
+
 // Photos Table
 const photosCS = new pgp.helpers.ColumnSet([
   'id', 'style_id', 'url', 'thumbnail_url'
@@ -104,6 +105,14 @@ const stylesParse = (data) => {
   });
 }
 
+// Create Indexes for Tables
+const photosIndex = `CREATE INDEX style_photos ON photos(style_id);`;
+const skusIndex = `CREATE INDEX style_skus ON skus(style_id);`;
+const relatedIndex = `CREATE INDEX product_related ON related(current_product_id);`;
+const featuresIndex = `CREATE INDEX product_features ON features(product_id);`;
+const stylesIndex = `CREATE INDEX product_styles ON styles(product_id);`;
+
+
 const loadData = (currCS, stream, parseCB, name) => {
   Papa.parse(stream, {
     header: true,
@@ -146,6 +155,14 @@ db.connect()
     await sco.any(createProducts);
     await sco.any(createRelated);
     await sco.any(createStyles);
+
+    // Create all indexes for tables that need them (for speed)
+    await sco.any(photosIndex);
+    await sco.any(skusIndex);
+    await sco.any(relatedIndex);
+    await sco.any(featuresIndex);
+    await sco.any(stylesIndex);
+
     return;
   }).then(async () => {
     // Load all tables
