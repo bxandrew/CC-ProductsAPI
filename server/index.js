@@ -12,12 +12,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/products', products);
 
 
-
-
-
-
-
-
 app.listen(port, () => {
   console.log(`SDC-Products API service successfully started on ${port}`);
 });
