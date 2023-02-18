@@ -6,11 +6,11 @@ const Papa = require('papaparse');
 const pgp = require('pg-promise')({ capSQL: true});
 
 const db = pgp({
-  host: process.env.HOST,
-  user: process.env.USER,
-  port: process.env.PORT,
-  password: process.env.PASSWORD,
-  database: process.env.DATABASE
+  host: process.env.AWS_HOST,
+  user: process.env.AWS_USER,
+  port: process.env.AWS_PORT,
+  password: process.env.AWS_PASSWORD,
+  database: process.env.AWS_DATABASE
 });
 
 let sco; // Shared connection object;
