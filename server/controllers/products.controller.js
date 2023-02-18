@@ -2,6 +2,8 @@ const db = require('../config/database');
 
 const productsIndex = async (req, res) => {
   console.log('GET request to /products');
+  console.log(req.query);
+
 
   const page = Number(req.query.page) || 1;
   const count = Number(req.query.count) || 5;
@@ -21,6 +23,7 @@ const productsIndex = async (req, res) => {
 
 const productsId = async (req, res) => {
   console.log('GET request to /products/:id');
+  console.log(req.params.id);
 
   const id = Number(req.params.id);
 
@@ -52,6 +55,7 @@ const productsId = async (req, res) => {
 
 const productsIdStyles = async (req, res) => {
   console.log('GET request to /products/:id/styles');
+  console.log(req.params);
 
   const id = Number(req.params.id);
 
@@ -141,6 +145,7 @@ const productsIdStyles = async (req, res) => {
 
 const productsIdRelated = async (req, res) => {
   console.log('GET request to /products/:id/related');
+  console.log(req.params);
 
   const id = req.params.id;
   let relatedProducts;
