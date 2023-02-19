@@ -30,7 +30,6 @@
   },
   "devDependencies": {
     "jest": "^29.4.3",
-    "supertest": "^6.3.3",
-    "newrelic": "^9.10.1"
+    "supertest": "^6.3.3"
   }
 }
