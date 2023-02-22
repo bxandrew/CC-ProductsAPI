@@ -3,11 +3,6 @@ import { check, group, sleep } from 'k6';
 import { randomIntBetween, randomItem } from "https://jslib.k6.io/k6-utils/1.4.0/index.js";
 import { URL } from 'https://jslib.k6.io/url/1.0.0/index.js';
 
-// export const options = {
-//   vus: 10,
-//   duration: '30s',
-// };
-
 export const options = {
   scenarios: {
     constant_request_rate: {
