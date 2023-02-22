@@ -21,7 +21,8 @@ describe('Testing all controllers in productsAPI', () => {
       }
     }
 
-    await productControllers.productsIndex(req, res);
+    let result = await productControllers.productsIndex(req, res);
+    console.log(res.result.length);
     expect(res.result.length).toBe(5);
   })
 
