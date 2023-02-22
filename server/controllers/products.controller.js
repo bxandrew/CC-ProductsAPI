@@ -1,8 +1,8 @@
 const db = require('../config/database');
 
 const productsIndex = async (req, res) => {
-  console.log('GET request to /products');
-  console.log(req.query);
+  // console.log('GET request to /products');
+  // console.log(req.query);
 
 
   const page = Number(req.query.page) || 1;
@@ -15,7 +15,10 @@ const productsIndex = async (req, res) => {
     .then((res) => {
       return res.rows;
     })
-    .catch((e) => console.log(e))
+    .catch((err) => {
+      console.log(err);
+      res.status(400).send('error');
+    })
 
   res.status(200);
   res.send(results);
@@ -36,7 +39,7 @@ const productsId = async (req, res) => {
     }).catch(() => {
       console.log('Error retrieving from products');
       res.status(404);
-      res.end();
+      res.send();
     })
 
   const features = await db.query(`SELECT feature, value FROM features WHERE product_id = ${id}`)
@@ -45,7 +48,7 @@ const productsId = async (req, res) => {
     }).catch(() => {
       console.log('Error retrieving from features');
       res.status(404);
-      res.end();
+      res.send();
     })
 
   let finalResult = {...productResult, features: featureResult};
