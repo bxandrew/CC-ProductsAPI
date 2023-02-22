@@ -1,6 +1,6 @@
 const db = require('../config/database');
 
-const productsIndex = (req, res) => {
+const productsIndex = async (req, res) => {
   // console.log('GET request to /products');
   // console.log(req.query);
 
@@ -11,20 +11,17 @@ const productsIndex = (req, res) => {
   const startingId = (page * count) - count + 1;
   const endingId = startingId + count;
 
-  // let results = await db.query(`SELECT * FROM products WHERE id >= ${startingId} AND id < ${endingId}`)
-  return db.query(`SELECT * FROM products WHERE id >= ${startingId} AND id < ${endingId}`)
+  let results = await db.query(`SELECT * FROM products WHERE id >= ${startingId} AND id < ${endingId}`)
     .then((res) => {
       return res.rows;
-    })
-    .then((result) => {
-      res.status(200);
-      res.send(result);
     })
     .catch((err) => {
       console.log(err);
       res.status(400).send('Error');
     })
 
+  res.status(200);
+  res.send(results);
 }
 
 const productsId = async (req, res) => {
